@@ -1,3 +1,4 @@
+// Package middlewares provides custom middleware for the API.
 package middlewares
 
 import (

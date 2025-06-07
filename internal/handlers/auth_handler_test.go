@@ -37,7 +37,9 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 func TestRegisterAndLogin(t *testing.T) {
 	db := setupTestDB()
 	router := setupRouter(db)
-	os.Setenv("JWT_SECRET", "testsecret")
+	if err := os.Setenv("JWT_SECRET", "testsecret"); err != nil {
+		t.Fatalf("failed to set JWT_SECRET: %v", err)
+	}
 
 	// Test data
 	user := map[string]string{
