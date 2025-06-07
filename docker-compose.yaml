@@ -1,0 +1,95 @@
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: my-api-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: my_api_db
+      POSTGRES_USER: api_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - api-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U api_user -d my_api_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Aplicación Go API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my-api-app
+    restart: unless-stopped
+    environment:
+      DB_DRIVER: postgres
+      DB_DSN: host=postgres user=api_user password=${POSTGRES_PASSWORD:-secure_password_123} dbname=my_api_db port=5432 sslmode=disable
+
+      # Variables de aplicación
+      PORT: 8080
+      GIN_MODE: release
+      APP_ENV: production
+
+      # Otras variables según tu aplicación
+      JWT_SECRET: supersecretkey
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - api-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Opcional: pgAdmin para administrar la base de datos
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: my-api-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - api-network
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    profiles:
+      - admin # Solo se ejecuta con: docker-compose --profile admin up
+
+# Volúmenes persistentes
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# Red personalizada
+networks:
+  api-network:
+    driver: bridge

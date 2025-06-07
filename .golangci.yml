@@ -1,0 +1,39 @@
+# GolangCI-Lint configuration for professional Go development
+
+version: "2"
+
+run:
+  timeout: 2m
+  tests: true
+
+linters:
+  enable:
+    - govet # Go's vet tool for catching suspicious constructs
+    - errcheck # Check that errors from functions are handled
+    - staticcheck # Advanced static analysis
+    - unused # Checks for unused variables/constants/functions/types
+    - gocritic # Heuristic checks for code quality
+    - revive # Style, documentation, and best-practices linter
+    # - depguard # Prevents usage of blacklisted imports
+    - prealloc # Suggests slice preallocation
+    - ineffassign # Detects ineffectual assignments
+    - misspell # Detects commonly misspelled English words
+    - dupl # Detects code duplication
+    - nakedret # Finds naked returns in functions
+    - dogsled # Too many blank identifiers in assignment
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+# Optional: exclude some files or directories
+# skip-dirs:
+#   - "internal/vendor"
+# skip-files:
+#   - ".*_gen.go"
+
+# Uncomment to enable caching for faster runs
+# cache:
+#   enabled: true
+#   dir: ~/.cache/golangci-lint
+
+# Run `golangci-lint run` to check your code!
