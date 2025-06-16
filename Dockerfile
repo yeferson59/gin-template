@@ -14,10 +14,12 @@ COPY cmd/ cmd/
 COPY internal/ internal/
 
 # Compilar el binario con optimizaciones
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build \
-    -ldflags='-w -s -extldflags "-static"' \
-    -a -installsuffix cgo \
-    -o api ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build \
+  -ldflags='-w -s -extldflags "-static"' \
+  -a -installsuffix cgo \
+  -o api ./cmd/api/main.go
+
+RUN upx --best --lzma /app/api
 
 # Etapa 2: Imagen final ultra-minimalista
 FROM scratch
