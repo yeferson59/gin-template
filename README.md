@@ -1,78 +1,155 @@
-# my-api
+# 🚀 Professional Gin API Template
 
 ## Description
 
-**my-api** is a professional template for building robust APIs in Go using the Gin framework. It includes JWT authentication, modular architecture, database connection with GORM, environment variable management, middlewares, and best development practices.
+**Gin API Template** is an enterprise-grade template for building robust, scalable REST APIs in Go using the Gin framework. It incorporates industry best practices including JWT authentication, structured logging, rate limiting, comprehensive validation, health checks, graceful shutdown, and production-ready security measures.
+
+## ✨ Key Features
+
+- 🔐 **JWT Authentication** with secure validation
+- 📊 **Structured Logging** with Logrus (JSON/Text formats)
+- 🛡️ **Rate Limiting** (IP-based with different rules for auth endpoints)
+- ✅ **Input Validation** with comprehensive password security
+- 🏥 **Health Checks** (Kubernetes-ready liveness/readiness probes)
+- 🔒 **Security Headers** (OWASP recommendations)
+- 📝 **Consistent API Responses** with standardized error handling
+- 🔄 **Graceful Shutdown** with configurable timeouts
+- 🐳 **Docker & Kubernetes Ready** with optimized containers
+- 🧪 **Comprehensive Testing** with in-memory database
+- 📋 **Complete Documentation** with API examples
+- ⚙️ **Environment-based Configuration** (dev/prod/test)
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-my-api/
-├── cmd/
-│   └── api/
-│       └── main.go         # Main entrypoint
-├── internal/
-│   ├── auth/               # JWT and authentication utilities
-│   ├── config/             # Configuration and environment variable management
-│   ├── database/           # Database initialization and connection
-│   ├── handlers/           # HTTP controllers
-│   ├── middlewares/        # Custom middlewares
-│   ├── models/             # Data models (GORM)
-│   ├── modules/            # Additional modules (scalable)
-│   └── routes/             # Main route registration
-├── data/                   # Database files (e.g., SQLite)
-├── .env                    # Environment variables (do not commit to git)
-├── .env.example            # Environment variable template
-├── .golangci.yml           # Linter configuration
-├── Makefile                # Development commands
-├── go.mod / go.sum         # Go dependencies
-├── Dockerfile              # Docker build file
-├── .dockerignore           # Docker context ignore file
-├── .gitignore              # Git ignore file
-└── README.md               # This file
+gin-template/
+├── pkg/                    # Reusable packages
+│   ├── response/          # Standardized API responses
+│   └── logger/            # Structured logging
+├── internal/               # Private application code
+│   ├── auth/              # JWT authentication utilities
+│   ├── config/            # Configuration management
+│   ├── database/          # Database initialization and utilities
+│   ├── handlers/          # HTTP controllers and business logic
+│   ├── middlewares/       # Custom middlewares (auth, rate limiting, etc.)
+│   ├── models/            # Data models (GORM)
+│   ├── routes/            # Route definitions and registration
+│   └── validators/        # Input validation logic
+├── cmd/api/               # Application entrypoint
+│   └── main.go           # Main application file
+├── configs/               # Environment-specific configurations
+│   ├── development.yaml  # Development settings
+│   └── production.yaml   # Production settings
+├── docs/                  # Documentation
+│   └── api.md            # API documentation
+├── scripts/               # Utility scripts
+│   └── setup-db.sh      # Database setup script
+├── tests/                 # Integration and load tests
+├── data/                  # Database files (SQLite)
+├── .env.example          # Environment variables template
+├── .golangci.yml         # Linter configuration
+├── Makefile              # Development and deployment commands
+├── Dockerfile            # Optimized Docker container
+├── docker-compose.yaml   # Multi-service development environment
+├── go.mod / go.sum       # Go dependencies
+└── README.md             # This documentation
 ```
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
-### 1. Clone the repository and enter the directory
+### Prerequisites
+- Go 1.21+ installed
+- Docker and Docker Compose (optional, for containerized development)
+- Make (for using Makefile commands)
 
-```sh
+### Quick Start
+
+#### 1. Clone and Setup
+```bash
 git clone <repo-url>
-cd my-api
-```
+cd gin-template
 
-### 2. Copy and edit the environment file
-
-```sh
+# Copy environment template
 cp .env.example .env
-# Edit .env according to your environment (port, database, JWT_SECRET, etc.)
 ```
 
-### 3. Install recommended tools
+#### 2. Configure Environment
+Edit `.env` file with your settings:
+```bash
+# Required: Change this for production!
+JWT_SECRET=your-super-secret-jwt-key
 
-```sh
-go install golang.org/x/tools/cmd/goimports@latest
-go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+# Database (SQLite for development)
+DB_DRIVER=sqlite
+DB_DSN=./data/app.db
+
+# Server
+PORT=8080
+APP_ENV=development
+
+# Logging
+LOG_LEVEL=info
+LOG_FORMAT=text
 ```
 
-Make sure `~/go/bin` is in your `$PATH`.
-
-### 4. Install dependencies
-
-```sh
+#### 3. Install Dependencies and Tools
+```bash
+# Install Go dependencies
 go mod tidy
+
+# Install development tools (optional but recommended)
+go install golang.org/x/tools/cmd/goimports@latest
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ```
 
-### 5. Run the application
+#### 4. Setup Database
+```bash
+# Create data directory for SQLite
+mkdir -p data
 
-```sh
+# Or use the setup script
+./scripts/setup-db.sh
+```
+
+#### 5. Run the Application
+
+**Option A: Direct Go execution**
+```bash
 make run
-# or directly
+# or
 go run ./cmd/api/main.go
+```
+
+**Option B: Docker Compose (Recommended for development)**
+```bash
+# Start all services (API + PostgreSQL + pgAdmin)
+make up-build
+
+# View logs
+make logs
+
+# Stop services
+make down
+```
+
+#### 6. Test the API
+```bash
+# Health check
+curl http://localhost:8080/health/
+
+# Register a user
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "email": "test@example.com", "password": "SecurePass123!"}'
+
+# Login
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password": "SecurePass123!"}'
 ```
 
 ---
@@ -107,11 +184,28 @@ go run ./cmd/api/main.go
 
 ---
 
-## Main Endpoints
+## 🌐 API Endpoints
 
-- `POST /api/register` — User registration (requires username, email, password)
-- `POST /api/login`    — User login (returns JWT)
-- `GET /api/protected` — Protected endpoint, requires JWT in Authorization header
+### Public Endpoints
+- `GET /health/` — Complete health check with service status
+- `GET /health/live` — Kubernetes liveness probe
+- `GET /health/ready` — Kubernetes readiness probe
+- `POST /api/auth/register` — User registration (enhanced validation)
+- `POST /api/auth/login` — User authentication (returns JWT + user info)
+
+### Protected Endpoints (Require JWT)
+- `GET /api/protected/` — Example protected resource
+- `GET /api/users/me` — Current user profile
+
+### Legacy Endpoints (Backward Compatibility)
+- `POST /api/register` — User registration
+- `POST /api/login` — User authentication
+
+### Security Features
+- **Rate Limiting**: 10 req/sec for general API, 5 req/min for auth endpoints
+- **Input Validation**: Comprehensive password requirements and email validation
+- **Security Headers**: OWASP-recommended headers automatically applied
+- **Request Tracking**: Unique request IDs for debugging and monitoring
 
 ---
 
