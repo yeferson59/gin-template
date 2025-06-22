@@ -12,7 +12,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"github.com/yeferson59/template-gin-api/internal/models"
+	"github.com/yeferson59/gin-template/internal/models"
 )
 
 // setupTestDB creates an in-memory SQLite database for testing.
@@ -45,7 +45,7 @@ func TestRegisterAndLogin(t *testing.T) {
 	user := map[string]string{
 		"username": "testuser",
 		"email":    "testuser@example.com",
-		"password": "testpass123",
+		"password": "TestPass123!",
 	}
 	body, _ := json.Marshal(user)
 
@@ -71,8 +71,7 @@ func TestRegisterAndLogin(t *testing.T) {
 	// Login test (also sending the email field to match the binding)
 	loginData := map[string]string{
 		"username": "testuser",
-		"email":    "testuser@example.com",
-		"password": "testpass123",
+		"password": "TestPass123!",
 	}
 	loginBody, _ := json.Marshal(loginData)
 	w = httptest.NewRecorder()
@@ -85,12 +84,23 @@ func TestRegisterAndLogin(t *testing.T) {
 	}
 
 	var resp struct {
-		Token string `json:"token"`
+		Success bool `json:"success"`
+		Data    struct {
+			Token string `json:"token"`
+			User  struct {
+				ID       int    `json:"id"`
+				Username string `json:"username"`
+				Email    string `json:"email"`
+			} `json:"user"`
+		} `json:"data"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to parse login response: %v", err)
 	}
-	if resp.Token == "" {
+	if !resp.Success {
+		t.Fatalf("expected successful response, got: %s", w.Body.String())
+	}
+	if resp.Data.Token == "" {
 		t.Fatalf("expected a JWT token, got empty string")
 	}
 }
