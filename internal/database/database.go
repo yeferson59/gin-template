@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gorm.io/driver/mysql"
@@ -12,20 +13,20 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"github.com/yeferson59/template-gin-api/internal/config"
+	"github.com/yeferson59/gin-template/internal/config"
 )
 
 // InitDB initializes the database connection using GORM.
 // Supports SQLite, PostgreSQL, and MySQL depending on configuration.
-func InitDB(_ *config.Config) (*gorm.DB, error) {
-	driver := os.Getenv("DB_DRIVER")
-	if driver == "" {
-		driver = "sqlite"
-	}
-	dsn := os.Getenv("DB_DSN")
-	if dsn == "" {
-		// Default value for SQLite
-		dsn = "./data/app.db"
+func InitDB(cfg *config.Config) (*gorm.DB, error) {
+	driver := cfg.Database.Driver
+	dsn := cfg.Database.DSN
+
+	// For SQLite, ensure the directory exists
+	if strings.ToLower(driver) == "sqlite" {
+		if err := ensureDirectoryExists(dsn); err != nil {
+			return nil, fmt.Errorf("failed to create database directory: %w", err)
+		}
 	}
 
 	var db *gorm.DB
@@ -69,4 +70,16 @@ func CloseDB(db *gorm.DB) {
 	if err := sqlDB.Close(); err != nil {
 		log.Printf("Error closing the database: %v", err)
 	}
+}
+
+// ensureDirectoryExists creates the directory for the database file if it doesn't exist.
+func ensureDirectoryExists(dbPath string) error {
+	dir := filepath.Dir(dbPath)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+		log.Printf("Created database directory: %s", dir)
+	}
+	return nil
 }
