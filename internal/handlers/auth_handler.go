@@ -8,42 +8,59 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
-	"github.com/yeferson59/template-gin-api/internal/auth"
-	"github.com/yeferson59/template-gin-api/internal/models"
+	"github.com/yeferson59/gin-template/internal/auth"
+	"github.com/yeferson59/gin-template/internal/models"
+	"github.com/yeferson59/gin-template/internal/validators"
+	"github.com/yeferson59/gin-template/pkg/logger"
+	"github.com/yeferson59/gin-template/pkg/response"
 )
-
-// AuthRequest represents the structure for registration and login requests.
-type AuthRequest struct {
-	Username string `json:"username" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
 
 // AuthResponse represents the structure for the token response.
 type AuthResponse struct {
-	Token string `json:"token"`
+	Token string          `json:"token"`
+	User  *UserSafeResponse `json:"user"`
+}
+
+// UserSafeResponse represents user data safe for API responses.
+type UserSafeResponse struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
 // Register handles user registration.
 func Register(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req AuthRequest
+		var req validators.AuthRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+			logger.WithField("error", err.Error()).Warn("Invalid JSON data for registration")
+			response.BadRequestError(c, "Invalid request data", err.Error())
+			return
+		}
+
+		// Validate the request data
+		if err := validators.ValidateUserRegistration(&req); err != nil {
+			logger.WithField("error", err.Error()).Warn("Validation failed for registration")
+			response.ValidationError(c, err.Error())
 			return
 		}
 
 		// Check if the user already exists by username or email
 		var existing models.User
 		if err := db.Where("username = ? OR email = ?", req.Username, req.Email).First(&existing).Error; err == nil {
-			c.JSON(http.StatusConflict, gin.H{"error": "Username or email already exists"})
+			logger.WithFields(map[string]interface{}{
+				"username": req.Username,
+				"email":    req.Email,
+			}).Warn("Attempt to register with existing username or email")
+			response.ConflictError(c, "User already exists", "Username or email already exists")
 			return
 		}
 
 		// Hash the password
 		hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing password"})
+			logger.WithField("error", err.Error()).Error("Failed to hash password")
+			response.InternalServerError(c, "Error processing password", "Failed to secure password")
 			return
 		}
 
@@ -54,42 +71,85 @@ func Register(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		if err := db.Create(&user).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
+			logger.WithField("error", err.Error()).Error("Failed to create user in database")
+			response.InternalServerError(c, "Could not create user", "Database error occurred")
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+		logger.WithFields(map[string]interface{}{
+			"user_id":  user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+		}).Info("User registered successfully")
+
+		userResponse := &UserSafeResponse{
+			ID:       user.ID,
+			Username: user.Username,
+			Email:    user.Email,
+		}
+
+		response.SuccessResponse(c, http.StatusCreated, "User registered successfully", userResponse)
 	}
 }
 
 // Login handles user login.
 func Login(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req AuthRequest
+		var req validators.LoginRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+			logger.WithField("error", err.Error()).Warn("Invalid JSON data for login")
+			response.BadRequestError(c, "Invalid request data", err.Error())
+			return
+		}
+
+		// Validate the request data
+		if err := validators.ValidateUserLogin(&req); err != nil {
+			logger.WithField("error", err.Error()).Warn("Validation failed for login")
+			response.ValidationError(c, err.Error())
 			return
 		}
 
 		var user models.User
 		if err := db.Where("username = ?", req.Username).First(&user).Error; err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+			logger.WithField("username", req.Username).Warn("Login attempt with non-existent username")
+			response.UnauthorizedError(c, "Invalid credentials", "Username or password is incorrect")
 			return
 		}
 
 		// Verify password
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+			logger.WithFields(map[string]interface{}{
+				"username": req.Username,
+				"user_id":  user.ID,
+			}).Warn("Login attempt with incorrect password")
+			response.UnauthorizedError(c, "Invalid credentials", "Username or password is incorrect")
 			return
 		}
 
 		// Generate JWT token using the centralized function
 		token, err := auth.GenerateJWT(user.ID, user.Email)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+			logger.WithField("error", err.Error()).Error("Failed to generate JWT token")
+			response.InternalServerError(c, "Authentication failed", "Could not generate access token")
 			return
 		}
 
-		c.JSON(http.StatusOK, AuthResponse{Token: token})
+		logger.WithFields(map[string]interface{}{
+			"user_id":  user.ID,
+			"username": user.Username,
+		}).Info("User logged in successfully")
+
+		userResponse := &UserSafeResponse{
+			ID:       user.ID,
+			Username: user.Username,
+			Email:    user.Email,
+		}
+
+		authResponse := AuthResponse{
+			Token: token,
+			User:  userResponse,
+		}
+
+		response.SuccessResponse(c, http.StatusOK, "Login successful", authResponse)
 	}
 }
