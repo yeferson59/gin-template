@@ -14,6 +14,12 @@ help: ## Show available commands
 build: ## Build Docker images
 	docker-compose -f $(COMPOSE_FILE) build --no-cache
 
+build-optimized: ## Build optimized production Docker image
+	./scripts/docker-build.sh
+
+build-prod: ## Build production Docker image with tag
+	./scripts/docker-build.sh prod
+
 up: ## Start all services
 	docker-compose -f $(COMPOSE_FILE) up -d
 
@@ -89,3 +95,27 @@ run: ## Run the main application
 	go run ./cmd/api/main.go
 
 all: fmt lint test ## Run all: format, lint, and test
+
+# --- Production Deployment ---
+prod-up: ## Start production environment
+	docker-compose -f docker-compose.prod.yml up -d
+
+prod-down: ## Stop production environment
+	docker-compose -f docker-compose.prod.yml down
+
+prod-logs: ## Show production logs
+	docker-compose -f docker-compose.prod.yml logs -f
+
+prod-status: ## Check production status
+	docker-compose -f docker-compose.prod.yml ps
+
+prod-health: ## Check production health
+	@echo "=== Production Health Check ==="
+	@curl -s http://localhost:8080/health/ | jq . || echo "Health check failed"
+
+image-size: ## Show Docker image sizes
+	@echo "=== Docker Image Sizes ==="
+	@docker images gin-template --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+
+image-scan: ## Scan Docker image for vulnerabilities (requires trivy)
+	@trivy image gin-template:latest 2>/dev/null || echo "Install trivy for vulnerability scanning: brew install trivy"
