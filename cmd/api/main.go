@@ -83,11 +83,12 @@ func main() {
 	logger.Info("Database migrations completed successfully")
 
 	// Set Gin mode based on environment
-	if config.IsProduction() {
+	switch {
+	case config.IsProduction():
 		gin.SetMode(gin.ReleaseMode)
-	} else if config.IsTest() {
+	case config.IsTest():
 		gin.SetMode(gin.TestMode)
-	} else {
+	default:
 		gin.SetMode(gin.DebugMode)
 	}
 
@@ -106,19 +107,19 @@ func main() {
 
 	// Create HTTP server with timeouts
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%s", cfg.Server.Port),
-		Handler:      router,
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
+		Addr:           fmt.Sprintf(":%s", cfg.Server.Port),
+		Handler:        router,
+		ReadTimeout:    cfg.Server.ReadTimeout,
+		WriteTimeout:   cfg.Server.WriteTimeout,
 		MaxHeaderBytes: int(cfg.Server.MaxBodySize),
 	}
 
 	// Start server in a goroutine
 	go func() {
 		logger.WithFields(map[string]interface{}{
-			"addr":         server.Addr,
-			"environment":  cfg.Server.Environment,
-			"read_timeout": cfg.Server.ReadTimeout,
+			"addr":          server.Addr,
+			"environment":   cfg.Server.Environment,
+			"read_timeout":  cfg.Server.ReadTimeout,
 			"write_timeout": cfg.Server.WriteTimeout,
 		}).Info("Starting HTTP server")
 
@@ -161,13 +162,18 @@ func performHealthCheck() {
 		fmt.Printf("Health check failed: %v\n", err)
 		os.Exit(1)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		fmt.Printf("Health check failed with status: %d\n", resp.StatusCode)
+		if err := resp.Body.Close(); err != nil {
+			fmt.Printf("Error closing response body: %v\n", err)
+		}
 		os.Exit(1)
 	}
 
+	if err := resp.Body.Close(); err != nil {
+		fmt.Printf("Error closing response body: %v\n", err)
+	}
 	fmt.Println("Health check passed")
 	os.Exit(0)
 }
