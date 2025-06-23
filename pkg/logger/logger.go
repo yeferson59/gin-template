@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Log is the global logger instance.
 var Log *logrus.Logger
 
 // Init initializes the global logger with configuration.

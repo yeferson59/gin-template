@@ -12,7 +12,7 @@ import (
 )
 
 // RegisterAPIRoutes registra las rutas main de la API.
-func RegisterAPIRoutes(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
+func RegisterAPIRoutes(router *gin.Engine, db *gorm.DB, _ *config.Config) {
 	// Health check endpoints (no rate limiting for monitoring)
 	health := router.Group("/health")
 	{

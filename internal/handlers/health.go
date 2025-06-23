@@ -52,9 +52,10 @@ func HealthCheck(db *gorm.DB) gin.HandlerFunc {
 		// For example: Redis, external APIs, etc.
 
 		statusCode := http.StatusOK
-		if healthResp.Status == "error" {
+		switch healthResp.Status {
+		case "error":
 			statusCode = http.StatusServiceUnavailable
-		} else if healthResp.Status == "degraded" {
+		case "degraded":
 			statusCode = http.StatusPartialContent
 		}
 

@@ -19,7 +19,7 @@ func ErrorHandler() gin.HandlerFunc {
 		if recovered != nil {
 			stack := debug.Stack()
 			logger.WithField("panic", recovered).WithField("stack", string(stack)).Error("Panic recovered")
-			
+
 			// Convert the recovered value to a string
 			var errStr string
 			switch v := recovered.(type) {
@@ -55,7 +55,7 @@ func RequestLogger() gin.HandlerFunc {
 			"user_agent":  param.Request.UserAgent(),
 			"error":       param.ErrorMessage,
 		}).Info("HTTP Request")
-		
+
 		return ""
 	})
 }
@@ -70,7 +70,7 @@ func SecurityHeaders() gin.HandlerFunc {
 		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Header("Content-Security-Policy", "default-src 'self'")
-		
+
 		c.Next()
 	}
 }
@@ -82,10 +82,10 @@ func RequestID() gin.HandlerFunc {
 		if requestID == "" {
 			requestID = generateRequestID()
 		}
-		
+
 		c.Header("X-Request-ID", requestID)
 		c.Set("request_id", requestID)
-		
+
 		c.Next()
 	}
 }
