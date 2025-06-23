@@ -31,19 +31,19 @@ type ServerConfig struct {
 
 // DatabaseConfig contains database-related configuration.
 type DatabaseConfig struct {
-	Driver          string `json:"driver"`
-	DSN             string `json:"dsn"`
-	MaxOpenConns    int    `json:"max_open_conns"`
-	MaxIdleConns    int    `json:"max_idle_conns"`
+	Driver          string        `json:"driver"`
+	DSN             string        `json:"dsn"`
+	MaxOpenConns    int           `json:"max_open_conns"`
+	MaxIdleConns    int           `json:"max_idle_conns"`
 	ConnMaxLifetime time.Duration `json:"conn_max_lifetime"`
 }
 
 // JWTConfig contains JWT-related configuration.
 type JWTConfig struct {
-	Secret          string        `json:"secret"`
-	ExpirationTime  time.Duration `json:"expiration_time"`
-	RefreshTime     time.Duration `json:"refresh_time"`
-	Issuer          string        `json:"issuer"`
+	Secret         string        `json:"secret"`
+	ExpirationTime time.Duration `json:"expiration_time"`
+	RefreshTime    time.Duration `json:"refresh_time"`
+	Issuer         string        `json:"issuer"`
 }
 
 // LoggingConfig contains logging-related configuration.
