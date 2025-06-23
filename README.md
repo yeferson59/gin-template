@@ -1,3 +1,5 @@
+[![Go CI](https://github.com/yeferson59/gin-template/actions/workflows/ci.yml/badge.svg)](https://github.com/yeferson59/gin-template/actions/workflows/ci.yml)
+
 # 🚀 Professional Gin API Template
 
 ## Description
