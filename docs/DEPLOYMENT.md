@@ -92,7 +92,7 @@ The included Dockerfile is already optimized for production:
 
 ```dockerfile
 # Multi-stage build with optimizations
-FROM golang:1.24.4-alpine AS builder
+FROM golang:1.25.7-alpine AS builder
 # ... build stage
 
 FROM scratch
@@ -119,7 +119,7 @@ docker push your-registry/gin-api:latest
 
 ```yaml
 # docker-stack.yml
-version: '3.8'
+version: "3.8"
 
 services:
   api:
@@ -156,6 +156,7 @@ networks:
 ```
 
 Deploy:
+
 ```bash
 docker stack deploy -c docker-stack.yml gin-api-stack
 ```
@@ -253,34 +254,34 @@ spec:
         app: gin-api
     spec:
       containers:
-      - name: gin-api
-        image: your-registry/gin-api:latest
-        ports:
-        - containerPort: 8080
-        envFrom:
-        - configMapRef:
-            name: gin-api-config
-        - secretRef:
-            name: gin-api-secrets
-        livenessProbe:
-          httpGet:
-            path: /health/live
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+        - name: gin-api
+          image: your-registry/gin-api:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: gin-api-config
+            - secretRef:
+                name: gin-api-secrets
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
 ```
 
 ### 3. Service and Ingress
@@ -295,9 +296,9 @@ spec:
   selector:
     app: gin-api
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 8080
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
   type: ClusterIP
 ---
 # ingress.yaml
@@ -311,20 +312,20 @@ metadata:
     nginx.ingress.kubernetes.io/rate-limit: "100"
 spec:
   tls:
-  - hosts:
-    - api.yourdomain.com
-    secretName: gin-api-tls
+    - hosts:
+        - api.yourdomain.com
+      secretName: gin-api-tls
   rules:
-  - host: api.yourdomain.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: gin-api-service
-            port:
-              number: 80
+    - host: api.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gin-api-service
+                port:
+                  number: 80
 ```
 
 ### 4. Deploy to Kubernetes
@@ -398,6 +399,7 @@ LOG_LEVEL: info
 ### Metrics (Future Enhancement)
 
 Consider adding:
+
 - Prometheus metrics endpoint
 - Grafana dashboards
 - Application Performance Monitoring (APM)
@@ -428,7 +430,7 @@ server {
 
     ssl_certificate /etc/ssl/certs/your-cert.pem;
     ssl_certificate_key /etc/ssl/private/your-key.pem;
-    
+
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
     ssl_prefer_server_ciphers off;
@@ -470,7 +472,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: "1.21"
       - run: go test ./...
 
   build-and-deploy:
@@ -478,15 +480,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build Docker image
         run: docker build -t ${{ secrets.REGISTRY }}/gin-api:${{ github.sha }} .
-        
+
       - name: Push to registry
         run: |
           echo ${{ secrets.REGISTRY_PASSWORD }} | docker login -u ${{ secrets.REGISTRY_USER }} --password-stdin
           docker push ${{ secrets.REGISTRY }}/gin-api:${{ github.sha }}
-          
+
       - name: Deploy to Kubernetes
         run: |
           echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
@@ -541,6 +543,7 @@ aws s3 cp backup_$DATE.sql s3://your-backup-bucket/
 ### Application State
 
 The application is stateless, so recovery involves:
+
 1. Restore database from backup
 2. Deploy latest application version
 3. Verify health checks

@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for ultra-minimal Gin API production image
 # Stage 1: Build environment
-FROM golang:1.24.4-alpine AS builder
+FROM golang:1.25.7-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \

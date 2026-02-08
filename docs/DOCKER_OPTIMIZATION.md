@@ -15,20 +15,21 @@ This document describes the comprehensive Docker optimizations implemented for t
 
 ### Before vs After Comparison
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **Image Size** | ~100MB+ | **~15-20MB** | **80-85% reduction** |
-| **Base Image** | Alpine Linux | **Scratch** | **100% minimal** |
-| **Layers** | Many | **~5 optimized** | **Streamlined** |
-| **Security** | Basic | **Enterprise-grade** | **Hardened** |
-| **Build Time** | Standard | **Multi-stage optimized** | **Efficient** |
+| Metric         | Before       | After                     | Improvement          |
+| -------------- | ------------ | ------------------------- | -------------------- |
+| **Image Size** | ~100MB+      | **~15-20MB**              | **80-85% reduction** |
+| **Base Image** | Alpine Linux | **Scratch**               | **100% minimal**     |
+| **Layers**     | Many         | **~5 optimized**          | **Streamlined**      |
+| **Security**   | Basic        | **Enterprise-grade**      | **Hardened**         |
+| **Build Time** | Standard     | **Multi-stage optimized** | **Efficient**        |
 
 ## 🏗️ Multi-Stage Build Architecture
 
-### Stage 1: Builder (`golang:1.24.4-alpine`)
+### Stage 1: Builder (`golang:1.25.7-alpine`)
+
 ```dockerfile
 # Build environment with full toolchain
-FROM golang:1.24.4-alpine AS builder
+FROM golang:1.25.7-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata upx
@@ -44,6 +45,7 @@ RUN upx --best --lzma /app/api
 ```
 
 ### Stage 2: Runtime Preparation (`alpine:3.19`)
+
 ```dockerfile
 # Create user and directory structure
 FROM alpine:3.19 AS runtime-prep
@@ -58,6 +60,7 @@ RUN mkdir -p /app/data /app/configs /app/logs && \
 ```
 
 ### Stage 3: Final Image (`scratch`)
+
 ```dockerfile
 # Ultra-minimal final image
 FROM scratch AS final
@@ -82,6 +85,7 @@ ENTRYPOINT ["./api"]
 ## 🔧 Optimization Techniques Applied
 
 ### 1. **Binary Optimization**
+
 ```bash
 # Static compilation
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64
@@ -99,6 +103,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 ```
 
 ### 2. **UPX Compression**
+
 ```bash
 # Maximum compression
 upx --best --lzma /app/api
@@ -106,6 +111,7 @@ upx --best --lzma /app/api
 ```
 
 ### 3. **Minimal Build Context**
+
 ```dockerfile
 # .dockerignore (whitelist approach)
 *
@@ -119,6 +125,7 @@ upx --best --lzma /app/api
 ```
 
 ### 4. **Scratch-Based Final Image**
+
 - **No OS**: Only the binary and essential files
 - **No Package Manager**: Zero attack surface
 - **No Shell**: Maximum security
@@ -127,6 +134,7 @@ upx --best --lzma /app/api
 ## 🛡️ Security Features
 
 ### 1. **Non-Root User**
+
 ```dockerfile
 # Use nobody user (65534:65534)
 USER 65534:65534
@@ -136,6 +144,7 @@ USER 65534:65534
 ```
 
 ### 2. **Read-Only Filesystem**
+
 ```yaml
 # docker-compose.prod.yml
 security_opt:
@@ -146,32 +155,36 @@ tmpfs:
 ```
 
 ### 3. **Minimal Attack Surface**
+
 - No package manager
 - No shell
 - No unnecessary binaries
 - Only essential certificates and timezone data
 
 ### 4. **Resource Limits**
+
 ```yaml
 deploy:
   resources:
     limits:
       memory: 512M
-      cpus: '0.5'
+      cpus: "0.5"
     reservations:
       memory: 128M
-      cpus: '0.1'
+      cpus: "0.1"
 ```
 
 ## 🏥 Health Check Implementation
 
 ### Docker Health Check
+
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD ["./api", "--health-check"] || exit 1
 ```
 
 ### Application Health Check
+
 ```go
 // main.go
 func performHealthCheck() {
@@ -187,6 +200,7 @@ func performHealthCheck() {
 ## 🚀 Build Script Features
 
 ### Enhanced Build Script (`scripts/docker-build.sh`)
+
 ```bash
 # Features:
 ✅ Automated build process
@@ -199,6 +213,7 @@ func performHealthCheck() {
 ```
 
 ### Build Commands
+
 ```bash
 # Basic optimized build
 make build-optimized
@@ -213,6 +228,7 @@ make build-prod
 ## 📋 Makefile Commands
 
 ### Development
+
 ```bash
 make build           # Standard Docker build
 make build-optimized # Optimized production build
@@ -221,6 +237,7 @@ make down            # Stop environment
 ```
 
 ### Production
+
 ```bash
 make prod-up         # Start production environment
 make prod-down       # Stop production environment
@@ -233,12 +250,13 @@ make image-scan      # Security vulnerability scan
 ## 📊 Performance Metrics
 
 ### Image Size Comparison
+
 ```bash
 # Before optimization
 REPOSITORY    TAG       SIZE
 gin-template  old       127MB
 
-# After optimization  
+# After optimization
 REPOSITORY    TAG       SIZE
 gin-template  latest    18.2MB
 
@@ -246,6 +264,7 @@ gin-template  latest    18.2MB
 ```
 
 ### Startup Performance
+
 ```bash
 # Container startup time
 Before: ~2-3 seconds
@@ -257,6 +276,7 @@ After:  ~15-25MB baseline
 ```
 
 ### Build Performance
+
 ```bash
 # Build cache efficiency
 Layer caching: Optimized
@@ -267,6 +287,7 @@ Transfer size: Minimal
 ## 🔍 Security Scanning
 
 ### Vulnerability Scanning
+
 ```bash
 # Install trivy for scanning
 brew install trivy
@@ -277,6 +298,7 @@ trivy image gin-template:latest
 ```
 
 ### Security Best Practices Applied
+
 - ✅ **Non-root user**: 65534:65534 (nobody)
 - ✅ **Read-only filesystem**: Enabled in production
 - ✅ **No new privileges**: Security option set
@@ -288,6 +310,7 @@ trivy image gin-template:latest
 ## 🌍 Production Deployment
 
 ### Production Docker Compose
+
 ```yaml
 # docker-compose.prod.yml
 services:
@@ -304,6 +327,7 @@ services:
 ```
 
 ### Kubernetes Deployment
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -315,22 +339,24 @@ spec:
         runAsUser: 65534
         readOnlyRootFilesystem: true
       containers:
-      - name: gin-api
-        image: gin-template:latest
-        resources:
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+        - name: gin-api
+          image: gin-template:latest
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
 ```
 
 ## 📈 Monitoring & Observability
 
 ### Health Check Endpoints
+
 - **`/health/`**: Complete application health
 - **`/health/live`**: Kubernetes liveness probe
 - **`/health/ready`**: Kubernetes readiness probe
 
 ### Logging
+
 ```bash
 # Structured JSON logging in production
 LOG_FORMAT=json
@@ -344,6 +370,7 @@ Kubernetes: Structured logging
 ## 🎯 Best Practices Summary
 
 ### ✅ **Image Optimization**
+
 1. **Multi-stage builds** for size reduction
 2. **Scratch base image** for minimal footprint
 3. **Static compilation** for portability
@@ -351,6 +378,7 @@ Kubernetes: Structured logging
 5. **Layer optimization** for build efficiency
 
 ### ✅ **Security Hardening**
+
 1. **Non-root user** for privilege separation
 2. **Read-only filesystem** for immutability
 3. **No shell access** for attack prevention
@@ -358,6 +386,7 @@ Kubernetes: Structured logging
 5. **Resource limits** for stability
 
 ### ✅ **Production Readiness**
+
 1. **Health checks** for monitoring
 2. **Graceful shutdown** for reliability
 3. **Structured logging** for observability
@@ -367,6 +396,7 @@ Kubernetes: Structured logging
 ## 🚀 Getting Started
 
 ### Quick Start
+
 ```bash
 # Build optimized image
 make build-optimized
@@ -382,6 +412,7 @@ make prod-logs
 ```
 
 ### Production Deployment
+
 ```bash
 # Set environment variables
 export JWT_SECRET="your-super-secret-key"
